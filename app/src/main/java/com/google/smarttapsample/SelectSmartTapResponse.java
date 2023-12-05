@@ -26,7 +26,15 @@ class SelectSmartTapResponse {
   String minimumVersion;
   String maximumVersion;
   String status;
-  byte[] mobileDeviceNonce;
+  /**
+   * --- spoZebra BEGIN ---
+   * As Smart tap selection could be skipped,
+   * let's use the mobile device nonce coming from FCI template
+   */
+  //byte[] mobileDeviceNonce;
+  /**
+   * --- spoZebra END ---
+   */
 
   /**
    * Constructor for the class
@@ -52,14 +60,21 @@ class SelectSmartTapResponse {
       byte[] fourByteNum = new byte[]{0x00, 0x00, byteNum[0], byteNum[1]};
 
       maximumVersion = Integer.toString((int) Utils.unsignedIntToLong(fourByteNum));
-
+      /**
+       * --- spoZebra BEGIN ---
+       * As Smart tap selection could be skipped,
+       * let's use the mobile device nonce coming from FCI template
+       */
       // Extract mobile device nonce
-      NdefMessage mdnNdefMessage = new NdefMessage(
+      /*NdefMessage mdnNdefMessage = new NdefMessage(
           Arrays.copyOfRange(response, 4, response.length - 2));
       this.mobileDeviceNonce = Arrays.copyOfRange(
           mdnNdefMessage.getRecords()[0].getPayload(),
           1,
-          mdnNdefMessage.getRecords()[0].getPayload().length);
+          mdnNdefMessage.getRecords()[0].getPayload().length);*/
+      /**
+       * --- spoZebra END ---
+       */
     } catch (Exception e) {
       throw new SmartTapException("Problem parsing `select smart tap 2` response: " + e);
     }

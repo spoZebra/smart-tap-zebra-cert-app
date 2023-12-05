@@ -268,9 +268,18 @@ class GetDataResponse {
 
         // Iterate over service NDEF records
         for (NdefRecord serviceRecord : serviceNdefRecord.getRecords()) {
+          /**
+           * --- spoZebra BEGIN ---
+           * Requested service type -> ALL
+           * Therefore, I should not check for loyalty type within service records
+           */
           // Check for `ly` type
-          if (Arrays.equals(serviceRecord.getType(), new byte[]{(byte) 0x6c, (byte) 0x79})) {
-            // Get the loyalty record payload
+          //if (Arrays.equals(serviceRecord.getType(), new byte[]{(byte) 0x6c, (byte) 0x79})) {
+          // Get the loyalty record payload
+          /**
+           * --- spoZebra END ---
+           */
+            try {
             NdefMessage loyaltyRecordPayload = new NdefMessage(serviceRecord.getPayload());
 
             // Iterate over loyalty NDEF records
@@ -282,7 +291,15 @@ class GetDataResponse {
                     Arrays.copyOfRange(loyalty.getPayload(), 1, loyalty.getPayload().length));
               }
             }
-          }
+        }catch(Exception ex){}
+          /**
+           * --- spoZebra BEGIN ---
+           * Requested service type -> ALL
+           */
+          //}
+          /**
+           * --- spoZebra END ---
+           */
         }
       }
     }

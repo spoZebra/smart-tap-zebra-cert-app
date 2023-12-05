@@ -133,10 +133,22 @@ public class MainActivity extends AppCompatActivity implements NfcAdapter.Reader
         this.stopCommand(descriptiveText);
         return;
       }
+    /**
+     * --- spoZebra BEGIN ---
+     * Smart tap selection must be skipped if supported
+     * https://developers.google.com/wallet/smart-tap/reference/apdu-commands/select-other-system-environment?hl=en#capabilities_bitmap
+     */
 
-      // Command: `select smart tap 2`
-      performSelectSmartTap(isoDep, descriptiveText);
+      //performSelectSmartTap(isoDep, descriptiveText);
 
+      if(!selectOSEResponse.skipSmartTapSelection) {
+        // Command: `select smart tap 2`
+        performSelectSmartTap(isoDep, descriptiveText);
+      }
+
+    /**
+     * --- spoZebra END ---
+     */
       // Command: `negotiate smart tap secure sessions`
       performNegotiateCrypto(isoDep, descriptiveText);
 
@@ -278,15 +290,22 @@ public class MainActivity extends AppCompatActivity implements NfcAdapter.Reader
         .append("\n* Maximum Version:\n  ")
         .append(selectSmartTapResponse.maximumVersion)
         .append("\n");
-
+    /**
+     * --- spoZebra BEGIN ---
+     * As Smart tap selection could be skipped,
+     * let's use the mobile device nonce coming from FCI template
+     */
+    /*
     if (selectSmartTapResponse.mobileDeviceNonce != null) {
       // Mobile device nonce
       descriptiveText
           .append("\n* Mobile Device Nonce:\n  ")
           .append(Hex.toHexString(selectSmartTapResponse.mobileDeviceNonce))
           .append("\n");
-    }
-
+    }*/
+    /**
+     * --- spoZebra END ---
+     */
     // End
     descriptiveText.append("\n----\n");
   }
@@ -300,10 +319,18 @@ public class MainActivity extends AppCompatActivity implements NfcAdapter.Reader
    */
   private void performNegotiateCrypto(IsoDep isoDep, StringBuilder descriptiveText)
       throws Exception {
-
+  /**
+   * --- spoZebra BEGIN ---
+   * As Smart tap selection could be skipped,
+   * let's use the mobile device nonce coming from FCI template
+   */
+    /*this.negotiateCryptoCommand = new NegotiateCryptoCommand(
+        this.selectSmartTapResponse.mobileDeviceNonce);*/
     this.negotiateCryptoCommand = new NegotiateCryptoCommand(
-        this.selectSmartTapResponse.mobileDeviceNonce);
-
+            this.selectOSEResponse.mobileDeviceNonce);
+  /**
+   * --- spoZebra END ---
+   */
     byte[] response = isoDep.transceive(negotiateCryptoCommand.commandToByteArray());
     this.negotiateCryptoResponse = new NegotiateCryptoResponse(response);
 
@@ -341,7 +368,11 @@ public class MainActivity extends AppCompatActivity implements NfcAdapter.Reader
         this.negotiateCryptoResponse.sequenceNumber + 1);
 
     byte[] response = isoDep.transceive(getDataCommand.commandToByteArray());
-
+    /**
+     * --- spoZebra BEGIN ---
+     * As Smart tap selection could be skipped,
+     * let's use the mobile device nonce coming from FCI template
+     */
     GetDataResponse getDataResponse = new GetDataResponse(
         response,
         negotiateCryptoResponse.mobileDeviceEphemeralPublicKey,
@@ -350,8 +381,11 @@ public class MainActivity extends AppCompatActivity implements NfcAdapter.Reader
         NegotiateCryptoCommand.COLLECTOR_ID,
         negotiateCryptoCommand.terminalEphemeralPublicKeyCompressed,
         negotiateCryptoCommand.signedData,
-        selectSmartTapResponse.mobileDeviceNonce);
-
+        // selectSmartTapResponse.mobileDeviceNonce
+        selectOSEResponse.mobileDeviceNonce);
+    /**
+     * --- spoZebra END ---
+     */
     descriptiveText.append("\n----\nSent `get smart tap data` command...");
 
     // Decrypted smartTapRedemptionValue from the pass

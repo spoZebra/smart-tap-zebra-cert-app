@@ -48,20 +48,50 @@ import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
  */
 class NegotiateCryptoCommand {
 
-  // Collector ID is hardcoded to `20180608` for this sample app
-  static final byte[] COLLECTOR_ID = new byte[]{(byte) 0x01, (byte) 0x33, (byte) 0xEE, (byte) 0x80};
+  /**
+   * --- spoZebra BEGIN
+   * Collector ID updated: 12345678
+   */
+  //static final byte[] COLLECTOR_ID = new byte[]{(byte) 0x01, (byte) 0x33, (byte) 0xEE, (byte) 0x80};
+  static final byte[] COLLECTOR_ID = new byte[]{(byte) 0x00 , (byte) 0xBC, (byte) 0x61, (byte) 0x4E};
+
+  /**
+   * --- spoZebra END ---
+   */
 
   // Private key is hardcoded for this sample app
-  private static final String LONG_TERM_PRIVATE_KEY = "-----BEGIN EC PRIVATE KEY-----\n"
-      + "MHcCAQEEIIJtF+UHZ7FlsOTZ4zL40dHiAiQoT7Ta8eUKAyRucHl9oAoGCCqGSM49\n"
-      + "AwEHoUQDQgAEchyXj869zfmKhRi9xP7f2AK07kEo4lE7ZlWTN14jh4YBTny+hRGR\n"
-      + "XcUzevV9zSSPJlPHpqqu5pEwlv1xyFvE1w==\n"
-      + "-----END EC PRIVATE KEY-----\n";
+  /**
+   * --- spoZebra BEGIN ---
+   * Private key updated
+   */
 
-  // Private key version is hardcoded to 1 for this sample app
+  /*private static final String LONG_TERM_PRIVATE_KEY = "-----BEGIN EC PRIVATE KEY-----\n"
+          + "MHcCAQEEIIJtF+UHZ7FlsOTZ4zL40dHiAiQoT7Ta8eUKAyRucHl9oAoGCCqGSM49\n"
+          + "AwEHoUQDQgAEchyXj869zfmKhRi9xP7f2AK07kEo4lE7ZlWTN14jh4YBTny+hRGR\n"
+          + "XcUzevV9zSSPJlPHpqqu5pEwlv1xyFvE1w==\n"
+          + "-----END EC PRIVATE KEY-----\n";*/
+  private static final String LONG_TERM_PRIVATE_KEY = "-----BEGIN EC PRIVATE KEY-----\n" +
+          "MHcCAQEEIIJtF+UHZ7FlsOTZ4zL40dHiAiQoT7Ta8eUKAyRucHl9oAoGCCqGSM49\n" +
+          "AwEHoUQDQgAEchyXj869zfmKhRi9xP7f2AK07kEo4lE7ZlWTN14jh4YBTny+hRGR\n" +
+          "XcUzevV9zSSPJlPHpqqu5pEwlv1xyFvE1w==\n" +
+          "-----END EC PRIVATE KEY-----\n";
+  /**
+   * --- spoZebra END ---
+   */
+
+  /**
+   * --- spoZebra BEGIN ---
+   * Key Version ID updated
+   */
+  /*private static final byte[] LONG_TERM_PRIVATE_KEY_VERSION = new byte[]{(byte) 0x00, (byte) 0x00,
+          (byte) 0x00,
+          (byte) 0x01};*/
   private static final byte[] LONG_TERM_PRIVATE_KEY_VERSION = new byte[]{(byte) 0x00, (byte) 0x00,
-      (byte) 0x00,
-      (byte) 0x01};
+          (byte) 0x00,
+          (byte) 0x01};
+  /**
+   * --- spoZebra END ---
+   */
 
   private static final byte[] COMMAND_PREFIX = new byte[]{(byte) 0x90, (byte) 0x53, (byte) 0x00,
       (byte) 0x00};

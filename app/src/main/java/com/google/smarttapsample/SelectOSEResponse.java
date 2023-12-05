@@ -26,6 +26,14 @@ import org.bouncycastle.util.encoders.Hex;
  */
 class SelectOSEResponse {
 
+  /**
+   * --- spoZebra BEGIN ---
+   * Smart tap selection must be skipped when supported
+   */
+  boolean skipSmartTapSelection;
+  /**
+   * --- spoZebra END ---
+   */
   ArrayList<byte[]> aids = new ArrayList<>();
   String status;
   String walletApplicationLabel;
@@ -270,10 +278,19 @@ class SelectOSEResponse {
    * @param directoryEntry Directory entry output
    * @param discretionaryTemplateContentTLV Data as a TLV
    */
-  private static void getSmartTapCapabilities(
-      StringBuilder directoryEntry,
-      HashMap<String, ArrayList<byte[]>> discretionaryTemplateContentTLV) {
+  private void getSmartTapCapabilities(
+          StringBuilder directoryEntry,
+          HashMap<String, ArrayList<byte[]>> discretionaryTemplateContentTLV) {
 
+    /**
+     * --- spoZebra BEGIN ---
+     * When the allow skipping second select bit is set to 1, the terminal should skip the select smart tap 2 command.
+     * When the allow skipping second select bit is set to 0, the terminal must not skip this command.
+     */
+    skipSmartTapSelection = false;
+    /**
+     * --- spoZebra END ---
+     */
     // Parse the capabilities bitmap
     if (discretionaryTemplateContentTLV.containsKey("DF62")) {
       int capabilitiesBitMap = Objects.requireNonNull(discretionaryTemplateContentTLV.get("DF62"))
@@ -290,6 +307,16 @@ class SelectOSEResponse {
           directoryEntry.append(", Capabilities: VAS support");
           break;
         case 3:
+
+          /**
+           * --- spoZebra BEGIN ---
+           * When the allow skipping second select bit is set to 1, the terminal should skip the select smart tap 2 command.
+           * When the allow skipping second select bit is set to 0, the terminal must not skip this command.
+           */
+          skipSmartTapSelection = true;
+          /**
+           * --- spoZebra END ---
+           */
           directoryEntry.append(", Capabilities: VAS support and allow skipping second select");
           break;
       }
