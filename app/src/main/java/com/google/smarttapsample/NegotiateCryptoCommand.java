@@ -106,11 +106,16 @@ class NegotiateCryptoCommand {
   private NdefRecord negotiateCryptoRecord;
 
   /**
+   * --- spoZebra BEGIN ---
+   * Update sequence command as a retry could be fired
+   */
+  private int sequenceNumber;
+  /**
    * Constructor for the class
    *
    * @param mobileDeviceNonce Mobile device nonce
    */
-  NegotiateCryptoCommand(byte[] mobileDeviceNonce) throws Exception {
+  /*NegotiateCryptoCommand(byte[] mobileDeviceNonce) throws Exception {
     try {
       // Create the needed NDEF records
       NdefRecord sessionRecord = createSessionRecord();
@@ -120,9 +125,27 @@ class NegotiateCryptoCommand {
       createNegotiateCryptoRecord(sessionRecord, cryptoParamsRecord);
     } catch (Exception e) {
       throw new SmartTapException(
-          "Problem creating `negotiate smart tap secure sessions` command: " + e);
+              "Problem creating `negotiate smart tap secure sessions` command: " + e);
+    }
+  }*/
+  NegotiateCryptoCommand(byte[] mobileDeviceNonce, int sequenceNumber) throws Exception {
+    try {
+      // Create the needed NDEF records
+      this.sequenceNumber = sequenceNumber;
+      NdefRecord sessionRecord = createSessionRecord();
+      NdefRecord signatureRecord = createSignatureRecord(mobileDeviceNonce);
+      createCollectorIdRecord();
+      NdefRecord cryptoParamsRecord = createCryptoParamsRecord(signatureRecord);
+      createNegotiateCryptoRecord(sessionRecord, cryptoParamsRecord);
+    } catch (Exception e) {
+      throw new SmartTapException(
+              "Problem creating `negotiate smart tap secure sessions` command: " + e);
     }
   }
+  /**
+   * --- spoZebra END ---
+   */
+
 
   /**
    * Creates the negotiate request NDEF record
@@ -266,7 +289,10 @@ class NegotiateCryptoCommand {
     terminalEphemeralPublicKey = (ECPublicKey) pair.getPublic();
     terminalEphemeralPrivateKey = pair.getPrivate();
   }
-
+  /**
+   * --- spoZebra BEGIN ---
+   * Update sequence command as a retry could be fired
+   */
   /**
    * Creates the session NDEF record
    *
@@ -283,10 +309,20 @@ class NegotiateCryptoCommand {
         null,
         Utils.concatenateByteArrays(
             sessionId,
-            new byte[]{(byte) 0x01}, // Sequence number (first in sequence)
+                /**
+                 * --- spoZebra BEGIN ---
+                 * Update sequence command as a retry could be fired
+                 */
+            new byte[]{(byte) sequenceNumber}, // Sequence number (first in sequence)
+                /**
+                 * --- spoZebra END ---
+                 */
             new byte[]{(byte) 0x01} // Status byte
         ));
   }
+  /**
+   * --- spoZebra END ---
+   */
 
   /**
    * Converts an instance of this class into a byte-array `negotiate secure smart tap sessions`

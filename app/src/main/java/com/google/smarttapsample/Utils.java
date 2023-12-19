@@ -31,6 +31,8 @@ import java.util.Collections;
 import java.util.Formatter;
 import java.util.HashMap;
 import java.util.Objects;
+import java.util.function.Supplier;
+
 import org.bouncycastle.jce.ECNamedCurveTable;
 import org.bouncycastle.jce.ECPointUtil;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -203,4 +205,22 @@ class Utils {
   static byte[] extractPayload(byte[] response) {
     return Arrays.copyOfRange(response, 0, response.length - 2);
   }
+  /**
+   * --- spoZebra BEGIN ---
+   * Handle SmartTap retries using this function
+   */
+  public static <T> T retry(int maxRetries, Supplier<T> action) throws Exception {
+    for (int attempt = 0; ; attempt++) {
+      try {
+        return action.get();
+      } catch (Exception ex) {
+        if(!(ex.getCause() instanceof SmartTapRetryRequested) || attempt >= maxRetries){
+          throw ex; // If the error does not require a retry or max attempts were reached already, propagate the exception
+        }
+      }
+    }
+  }
+  /**
+   * --- spoZebra END ---
+   */
 }

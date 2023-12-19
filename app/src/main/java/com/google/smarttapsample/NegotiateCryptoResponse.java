@@ -57,8 +57,17 @@ class NegotiateCryptoResponse {
         }
       }
     } catch (Exception e) {
-      throw new SmartTapException(
-          "Problem parsing `negotiate secure smart tap sessions` response: " + e);
+      /**
+     * --- spoZebra BEGIN ---
+     * 92XX - Possible transient failure
+     * The 92XX status messages mean the command failed, but that an immediate retry may succeed.
+     * The terminal must retry at least one time. If the retry fails, end the session. The terminal may continue to request payment.
+     */
+      throw e;
+      //throw new SmartTapException("Problem parsing `negotiate secure smart tap sessions` response: " + e);
+      /**
+       * --- spoZebra END ---
+       */
     }
   }
 
@@ -68,7 +77,19 @@ class NegotiateCryptoResponse {
   private void checkStatus() throws Exception {
     // Check if status is valid
     if (!this.status.equals("9000")) {
-      if (this.status.equals("9500")) {
+      /**
+       * --- spoZebra BEGIN ---
+       * 92XX - Possible transient failure
+       * The 92XX status messages mean the command failed, but that an immediate retry may succeed.
+       * The terminal must retry at least one time. If the retry fails, end the session. The terminal may continue to request payment.
+       */
+      if(this.status.startsWith("92")){
+        throw new SmartTapRetryRequested();
+      }
+      /**
+       * --- spoZebra END ---
+       */
+      else if (this.status.equals("9500")) {
         throw new SmartTapException("Unable to authenticate");
       } else {
         throw new SmartTapException("Invalid Status: " + this.status);

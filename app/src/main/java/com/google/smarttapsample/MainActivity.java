@@ -24,6 +24,8 @@ import android.widget.ListView;
 import androidx.appcompat.app.AppCompatActivity;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.bouncycastle.util.encoders.Hex;
 
 /**
@@ -147,18 +149,18 @@ public class MainActivity extends AppCompatActivity implements NfcAdapter.Reader
          * 92XX - Possible transient failure
          * The 92XX status messages mean the command failed, but that an immediate retry may succeed.
          * The terminal must retry at least one time. If the retry fails, end the session. The terminal may continue to request payment.
+         * Retry 3 times here
          */
-
+          Utils.retry(3, () -> {
+            try {
+              performSelectSmartTap(isoDep, descriptiveText);
+            } catch (Exception e) {
+              throw new RuntimeException(e);
+            }
+            return null;
+          });
         //performSelectSmartTap(isoDep, descriptiveText);
 
-        try {
-          // Command: `select smart tap 2`
-          performSelectSmartTap(isoDep, descriptiveText);
-        }
-        catch (SmartTapRetryRequested ex) {
-          // Retry just once
-          performSelectSmartTap(isoDep, descriptiveText);
-        }
         /**
          * --- spoZebra END ---
          */
@@ -167,11 +169,43 @@ public class MainActivity extends AppCompatActivity implements NfcAdapter.Reader
     /**
      * --- spoZebra END ---
      */
-      // Command: `negotiate smart tap secure sessions`
-      performNegotiateCrypto(isoDep, descriptiveText);
+      /**
+       * --- spoZebra BEGIN ---
+       * 92XX - Possible transient failure
+       * The 92XX status messages mean the command failed, but that an immediate retry may succeed.
+       * The terminal must retry at least one time. If the retry fails, end the session. The terminal may continue to request payment.
+       * Retry 3 times here
+       */
+      AtomicInteger deltaSeqNumber = new AtomicInteger();
+      Utils.retry(3, () -> {
+        try {
+          performNegotiateCrypto(isoDep, descriptiveText, deltaSeqNumber.incrementAndGet());
+        } catch (Exception e) {
+          // Work around for testing purpose -> increment twice as the response from Smart Tap will increment it as well.
+          deltaSeqNumber.incrementAndGet();
+          throw new RuntimeException(e);
+        }
+        return null; // Since the original method returns void, we return null here
+      });
 
+      deltaSeqNumber.lazySet(0); //
+      Utils.retry(3, () -> {
+        try {
+          performGetData(isoDep, descriptiveText, deltaSeqNumber.incrementAndGet());
+        } catch (Exception e) {
+          // Work around for testing purpose -> increment twice as the response from Smart Tap will increment it as well.
+          deltaSeqNumber.incrementAndGet();
+          throw new RuntimeException(e);
+        }
+        return null; // Since the original method returns void, we return null here
+      });
+      // Command: `negotiate smart tap secure sessions`
+      //performNegotiateCrypto(isoDep, descriptiveText);
       // Command: `get smart tap data`
-      performGetData(isoDep, descriptiveText);
+      //performGetData(isoDep, descriptiveText);
+      /**
+       * --- spoZebra END ---
+       */
 
       // Stop
       this.stopCommand(descriptiveText);
@@ -350,8 +384,17 @@ public class MainActivity extends AppCompatActivity implements NfcAdapter.Reader
    * @param isoDep ISO-DEP (ISO 14443-4) tag methods
    * @param descriptiveText Smart Tap response data to be surfaced on the device
    */
-  private void performNegotiateCrypto(IsoDep isoDep, StringBuilder descriptiveText)
-      throws Exception {
+
+  /**
+   * --- spoZebra BEGIN ---
+   * Update sequence command as a retry could be fired
+   */
+  //private void performNegotiateCrypto(IsoDep isoDep, StringBuilder descriptiveText)
+  private void performNegotiateCrypto(IsoDep isoDep, StringBuilder descriptiveText, int sequenceNumber)
+          throws Exception {
+  /**
+   * --- spoZebra END ---
+   */
   /**
    * --- spoZebra BEGIN ---
    * As Smart tap selection could be skipped,
@@ -365,7 +408,14 @@ public class MainActivity extends AppCompatActivity implements NfcAdapter.Reader
     if(this.selectSmartTapResponse != null)
       mobileDeviceNonce = this.selectSmartTapResponse.mobileDeviceNonce;
 
-    this.negotiateCryptoCommand = new NegotiateCryptoCommand(mobileDeviceNonce);
+    /**
+     * --- spoZebra BEGIN ---
+     * Update sequence command as a retry could be fired
+     */
+    this.negotiateCryptoCommand = new NegotiateCryptoCommand(mobileDeviceNonce, sequenceNumber);
+    /**
+     * --- spoZebra END ---
+     */
   /**
    * --- spoZebra END ---
    */
@@ -398,13 +448,24 @@ public class MainActivity extends AppCompatActivity implements NfcAdapter.Reader
    * @param isoDep ISO-DEP (ISO 14443-4) tag methods
    * @param descriptiveText Smart Tap response data to be surfaced on the device
    */
-  private void performGetData(IsoDep isoDep, StringBuilder descriptiveText) throws Exception {
+  /**
+   * --- spoZebra BEGIN ---
+   * Update sequence command as a retry could be fired
+   */
+  /*private void performGetData(IsoDep isoDep, StringBuilder descriptiveText) throws Exception {
+  GetDataCommand getDataCommand = new GetDataCommand(
+          this.negotiateCryptoCommand.sessionId,
+          this.negotiateCryptoCommand.collectorIdRecord,
+          this.negotiateCryptoResponse.sequenceNumber + 1);*/
+  private void performGetData(IsoDep isoDep, StringBuilder descriptiveText, int deltaSeqNumber) throws Exception {
 
     GetDataCommand getDataCommand = new GetDataCommand(
         this.negotiateCryptoCommand.sessionId,
         this.negotiateCryptoCommand.collectorIdRecord,
-        this.negotiateCryptoResponse.sequenceNumber + 1);
-
+        this.negotiateCryptoResponse.sequenceNumber + deltaSeqNumber);
+    /**
+     * --- spoZebra END ---
+     */
     byte[] response = isoDep.transceive(getDataCommand.commandToByteArray());
     /**
      * --- spoZebra BEGIN ---

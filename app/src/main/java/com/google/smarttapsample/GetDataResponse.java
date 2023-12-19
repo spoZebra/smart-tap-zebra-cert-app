@@ -73,8 +73,20 @@ class GetDataResponse {
     try {
       // Extract status
       String status = Utils.getStatus(response);
-
-      if (!status.startsWith("9")) {
+      /**
+       * --- spoZebra BEGIN ---
+       * 92XX - Possible transient failure
+       * The 92XX status messages mean the command failed, but that an immediate retry may succeed.
+       * The terminal must retry at least one time. If the retry fails, end the session. The terminal may continue to request payment.
+       */
+      // if (!status.startsWith("9")) { wrong status check
+      if (!status.startsWith("9") || status.startsWith("92")) {
+        if(status.startsWith("92")){
+          throw new SmartTapRetryRequested();
+        }
+        /**
+         * --- spoZebra END ---
+         */
         // Invalid status code
         // https://developers.google.com/wallet/smart-tap/reference/apdu-commands/status-words
         throw new SmartTapException("Invalid status: " + status);
@@ -101,7 +113,15 @@ class GetDataResponse {
         throw new SmartTapException("Blank Smart Tap redemption value!");
       }
     } catch (Exception e) {
-      throw new SmartTapException("Problem parsing `get smart tap data` response: " + e);
+      /**
+     * --- spoZebra BEGIN ---
+     * Propagate the proper retry ex
+     */
+      //throw new SmartTapException("Problem parsing `get smart tap data` response: " + e);
+      throw e;
+      /**
+       * --- spoZebra END ---
+       */
     }
   }
 
