@@ -40,6 +40,16 @@ class SelectOSEResponse {
   String transactionMode;
   byte[] mobileDeviceNonce;
   byte[] mobileDeviceEphemeralKey;
+  /**
+   * --- spoZebra BEGIN ---
+   *  The terminal should proceed to the next command only if version 0001 is included in the interval defined by the minimum and maximum versions
+   */
+  long minVersion;
+  long maxVersion;
+
+  /**
+   * --- spoZebra END ---
+   */
   ArrayList<String> applications = new ArrayList<>();
 
   /**
@@ -223,22 +233,52 @@ class SelectOSEResponse {
     if (discretionaryTemplateContentTLV.containsKey("DF6D")) {
       byte[] bytesNum = Objects.requireNonNull(discretionaryTemplateContentTLV.get("DF6D")).get(0);
       byte[] fourByteNum = new byte[]{0x00, 0x00, bytesNum[0], bytesNum[1]};
+      /**
+       * --- spoZebra BEGIN ---
+       *  The terminal should proceed to the next command only if version 0001 is included in the interval defined by the minimum and maximum versions
+       */
+      /*
       int applicationMinimumVersion = (int) Utils.unsignedIntToLong(fourByteNum);
 
       directoryEntry
-          .append(", Minimum Version: ")
-          .append(applicationMinimumVersion);
+              .append(", Minimum Version: ")
+              .append(applicationMinimumVersion);*/
+      minVersion = Utils.unsignedIntToLong(fourByteNum);
+      directoryEntry
+              .append(", Minimum Version: ")
+              .append(minVersion);
+
+      /**
+       * --- spoZebra END ---
+       */
+
     }
 
     // Get the maximum version
     if (discretionaryTemplateContentTLV.containsKey("DF4D")) {
       byte[] num = Objects.requireNonNull(discretionaryTemplateContentTLV.get("DF4D")).get(0);
       byte[] byte_num = new byte[]{0x00, 0x00, num[0], num[1]};
+
+      /**
+       * --- spoZebra BEGIN ---
+       *  The terminal should proceed to the next command only if version 0001 is included in the interval defined by the minimum and maximum versions
+       */
+      /*
       int applicationMaximumVersion = (int) Utils.unsignedIntToLong(byte_num);
 
       directoryEntry
           .append(", Maximum Version: ")
-          .append(applicationMaximumVersion);
+          .append(applicationMaximumVersion);*/
+
+      maxVersion = Utils.unsignedIntToLong(byte_num);
+
+      directoryEntry
+              .append(", Maximum Version: ")
+              .append(maxVersion);
+
+      /**
+       * --- spoZebra END ---
+       */
     }
 
     // Get the mobile device nonce

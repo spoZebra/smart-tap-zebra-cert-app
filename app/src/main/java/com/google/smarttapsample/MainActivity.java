@@ -237,6 +237,21 @@ public class MainActivity extends AppCompatActivity implements NfcAdapter.Reader
 
     // End
     descriptiveText.append("\n----\n");
+
+
+    /**
+     * --- spoZebra BEGIN ---
+     * The minimum and maximum versions represent the range of versions allowed in future commands.
+     * All currently-certified Smart Tap commands use version 0001, which refers to Smart Tap version 2.1.
+     * The terminal should proceed to the next command only if version 0001 is included in the interval defined by the minimum and maximum versions.
+     */
+    if(selectOSEResponse.minVersion > (long)0001 || selectOSEResponse.maxVersion < (long)0001){
+      throw new SmartTapException("Unsupported Smart Tap 2.X mimimum version");
+    }
+    /**
+     * --- spoZebra END ---
+     */
+
   }
 
   /**
