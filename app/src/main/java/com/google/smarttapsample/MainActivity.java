@@ -360,10 +360,10 @@ public class MainActivity extends AppCompatActivity implements NfcAdapter.Reader
 
   // this.negotiateCryptoCommand = new NegotiateCryptoCommand(this.selectSmartTapResponse.mobileDeviceNonce);
 
-  byte[] mobileDeviceNonce = this.selectSmartTapResponse.mobileDeviceNonce;
+    byte[] mobileDeviceNonce = this.selectOSEResponse.mobileDeviceNonce;
 
-  if(mobileDeviceNonce == null)
-    mobileDeviceNonce = this.selectOSEResponse.mobileDeviceNonce;
+    if(this.selectSmartTapResponse != null)
+      mobileDeviceNonce = this.selectSmartTapResponse.mobileDeviceNonce;
 
     this.negotiateCryptoCommand = new NegotiateCryptoCommand(mobileDeviceNonce);
   /**
