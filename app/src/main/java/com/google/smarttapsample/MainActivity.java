@@ -142,8 +142,26 @@ public class MainActivity extends AppCompatActivity implements NfcAdapter.Reader
       //performSelectSmartTap(isoDep, descriptiveText);
 
       if(!selectOSEResponse.skipSmartTapSelection) {
-        // Command: `select smart tap 2`
-        performSelectSmartTap(isoDep, descriptiveText);
+        /**
+         * --- spoZebra BEGIN ---
+         * 92XX - Possible transient failure
+         * The 92XX status messages mean the command failed, but that an immediate retry may succeed.
+         * The terminal must retry at least one time. If the retry fails, end the session. The terminal may continue to request payment.
+         */
+
+        //performSelectSmartTap(isoDep, descriptiveText);
+
+        try {
+          // Command: `select smart tap 2`
+          performSelectSmartTap(isoDep, descriptiveText);
+        }
+        catch (SmartTapRetryRequested ex) {
+          // Retry just once
+          performSelectSmartTap(isoDep, descriptiveText);
+        }
+        /**
+         * --- spoZebra END ---
+         */
       }
 
     /**
@@ -337,12 +355,17 @@ public class MainActivity extends AppCompatActivity implements NfcAdapter.Reader
   /**
    * --- spoZebra BEGIN ---
    * As Smart tap selection could be skipped,
-   * let's use the mobile device nonce coming from FCI template
+   * let's use the mobile device nonce coming from FCI template if sm select command was not issued
    */
-    /*this.negotiateCryptoCommand = new NegotiateCryptoCommand(
-        this.selectSmartTapResponse.mobileDeviceNonce);*/
-    this.negotiateCryptoCommand = new NegotiateCryptoCommand(
-            this.selectOSEResponse.mobileDeviceNonce);
+
+  // this.negotiateCryptoCommand = new NegotiateCryptoCommand(this.selectSmartTapResponse.mobileDeviceNonce);
+
+  byte[] mobileDeviceNonce = this.selectSmartTapResponse.mobileDeviceNonce;
+
+  if(mobileDeviceNonce == null)
+    mobileDeviceNonce = this.selectOSEResponse.mobileDeviceNonce;
+
+    this.negotiateCryptoCommand = new NegotiateCryptoCommand(mobileDeviceNonce);
   /**
    * --- spoZebra END ---
    */

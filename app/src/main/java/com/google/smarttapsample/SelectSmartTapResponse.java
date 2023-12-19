@@ -26,15 +26,8 @@ class SelectSmartTapResponse {
   String minimumVersion;
   String maximumVersion;
   String status;
-  /**
-   * --- spoZebra BEGIN ---
-   * As Smart tap selection could be skipped,
-   * let's use the mobile device nonce coming from FCI template
-   */
-  //byte[] mobileDeviceNonce;
-  /**
-   * --- spoZebra END ---
-   */
+
+  byte[] mobileDeviceNonce = null;
 
   /**
    * Constructor for the class
@@ -46,6 +39,19 @@ class SelectSmartTapResponse {
     this.status = Utils.getStatus(response);
 
     if (!this.status.equals("9000")) {
+      /**
+       * --- spoZebra BEGIN ---
+       * 92XX - Possible transient failure
+       * The 92XX status messages mean the command failed, but that an immediate retry may succeed.
+       * The terminal must retry at least one time. If the retry fails, end the session. The terminal may continue to request payment.
+       */
+      if(this.status.startsWith("92")){
+        throw new SmartTapRetryRequested();
+      }
+      /**
+       * --- spoZebra END ---
+       */
+
       throw new SmartTapException("Invalid Status: " + this.status);
     }
 
@@ -60,21 +66,15 @@ class SelectSmartTapResponse {
       byte[] fourByteNum = new byte[]{0x00, 0x00, byteNum[0], byteNum[1]};
 
       maximumVersion = Integer.toString((int) Utils.unsignedIntToLong(fourByteNum));
-      /**
-       * --- spoZebra BEGIN ---
-       * As Smart tap selection could be skipped,
-       * let's use the mobile device nonce coming from FCI template
-       */
+
       // Extract mobile device nonce
-      /*NdefMessage mdnNdefMessage = new NdefMessage(
+      NdefMessage mdnNdefMessage = new NdefMessage(
           Arrays.copyOfRange(response, 4, response.length - 2));
       this.mobileDeviceNonce = Arrays.copyOfRange(
           mdnNdefMessage.getRecords()[0].getPayload(),
           1,
-          mdnNdefMessage.getRecords()[0].getPayload().length);*/
-      /**
-       * --- spoZebra END ---
-       */
+          mdnNdefMessage.getRecords()[0].getPayload().length);
+
     } catch (Exception e) {
       throw new SmartTapException("Problem parsing `select smart tap 2` response: " + e);
     }
