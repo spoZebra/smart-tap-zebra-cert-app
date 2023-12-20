@@ -60,7 +60,8 @@ class GetDataResponse {
    * @param mobileDeviceNonce Mobile device nonce
    */
   GetDataResponse(
-      byte[] response,
+          byte[] response,
+          byte[] response2,
       byte[] mobileDeviceEphemeralPublicKey,
       PrivateKey terminalEphemeralPrivateKey,
       byte[] terminalNonce,
@@ -73,6 +74,7 @@ class GetDataResponse {
     try {
       // Extract status
       String status = Utils.getStatus(response);
+      String status2 = Utils.getStatus(response2);
       /**
        * --- spoZebra BEGIN ---
        * 92XX - Possible transient failure
@@ -80,20 +82,20 @@ class GetDataResponse {
        * The terminal must retry at least one time. If the retry fails, end the session. The terminal may continue to request payment.
        */
       // if (!status.startsWith("9")) { wrong status check
-      if (!status.startsWith("9") || status.startsWith("92")) {
-        if(status.startsWith("92")){
+      if(status.startsWith("92") || (status2.startsWith("92"))){
           throw new SmartTapRetryRequested();
-        }
-        /**
-         * --- spoZebra END ---
-         */
+      }
+      else if (!status.startsWith("9")) {
         // Invalid status code
         // https://developers.google.com/wallet/smart-tap/reference/apdu-commands/status-words
         throw new SmartTapException("Invalid status: " + status);
       }
-
+      /**
+       * --- spoZebra END ---
+       */
+      byte[] resOk = Utils.concatenateByteArrays(Utils.extractPayload(response), Utils.extractPayload(response2));
       // Extract the service request NDEF record
-      NdefRecord serviceRequestRecord = getServiceRequestRecord(Utils.extractPayload(response));
+      NdefRecord serviceRequestRecord = getServiceRequestRecord(Utils.extractPayload(resOk));
 
       // Extract the record bundle NDEF record
       NdefRecord recordBundleRecord = getRecordBundleNdefRecord(serviceRequestRecord);

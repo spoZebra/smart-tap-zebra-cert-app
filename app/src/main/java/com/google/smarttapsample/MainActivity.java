@@ -467,6 +467,20 @@ public class MainActivity extends AppCompatActivity implements NfcAdapter.Reader
      * --- spoZebra END ---
      */
     byte[] response = isoDep.transceive(getDataCommand.commandToByteArray());
+
+    byte[] cmd2 = Utils.concatenateByteArrays(
+            new byte[]{
+                    (byte) 0x90,
+                    (byte) 0xC0,
+                    (byte) 0x00,
+                    (byte) 0x00
+            },
+            new byte[]{(byte) 0x00});
+    /**
+     * --- spoZebra END ---
+     */
+    byte[] response2 = isoDep.transceive(cmd2);
+    //response = Utils.concatenateByteArrays(response, response2);
     /**
      * --- spoZebra BEGIN ---
      * As Smart tap selection could be skipped,
@@ -474,6 +488,7 @@ public class MainActivity extends AppCompatActivity implements NfcAdapter.Reader
      */
     GetDataResponse getDataResponse = new GetDataResponse(
         response,
+        response2,
         negotiateCryptoResponse.mobileDeviceEphemeralPublicKey,
         negotiateCryptoCommand.terminalEphemeralPrivateKey,
         negotiateCryptoCommand.terminalNonce,
