@@ -81,9 +81,12 @@ class GetDataResponse {
        * First, the terminal should retrieve the payload in the reb record.
        * Next, it should get the payload from any Response: get additional smart tap data, if present, and concatenate them.
        */
-      byte[] concatPayloads = Utils.concatenateByteArrays(Utils.extractPayload(getDataResponse), Utils.extractPayload(getAdditionalDataResponse));
+      byte[] fullPayload =Utils.extractPayload(getDataResponse);
+      if(getAdditionalDataResponse != null)
+        fullPayload = Utils.concatenateByteArrays(Utils.extractPayload(getDataResponse), Utils.extractPayload(getAdditionalDataResponse));
+
       // Extract the service request NDEF record
-      NdefRecord serviceRequestRecord = getServiceRequestRecord(Utils.extractPayload(concatPayloads));
+      NdefRecord serviceRequestRecord = getServiceRequestRecord(Utils.extractPayload(fullPayload));
       /**
        * --- spoZebra END ---
        */
