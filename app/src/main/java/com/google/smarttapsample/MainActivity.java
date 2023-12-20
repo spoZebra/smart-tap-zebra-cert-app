@@ -466,29 +466,42 @@ public class MainActivity extends AppCompatActivity implements NfcAdapter.Reader
     /**
      * --- spoZebra END ---
      */
-    byte[] response = isoDep.transceive(getDataCommand.commandToByteArray());
+    byte[] getDataResponse = isoDep.transceive(getDataCommand.commandToByteArray());
 
-    byte[] cmd2 = Utils.concatenateByteArrays(
-            new byte[]{
-                    (byte) 0x90,
-                    (byte) 0xC0,
-                    (byte) 0x00,
-                    (byte) 0x00
-            },
-            new byte[]{(byte) 0x00});
+    /**
+     * --- spoZebra BEGIN ---
+     * The response data may be chunked over multiple APDUs.
+     * First, the terminal should retrieve the payload in the reb record.
+     * Next, it should get the payload from any Response: get additional smart tap data
+     *
+     * 9100 indicates that there is additional data, so the terminal needs to make another get additional smart tap data request.
+     */
+
+    // Check first get data status
+    String statusData = Utils.getStatus(getDataResponse);
+    Utils.checkStatusResponse(statusData);
+
+    byte[] getAdditionalDataResponse = null;
+    if(statusData.equals("9100")) {
+      // Send get additional data request
+      GetAdditionalDataCommand getAdditionalDataCommand = new GetAdditionalDataCommand();
+      getAdditionalDataResponse = isoDep.transceive(getAdditionalDataCommand.commandToByteArray());
+      // Get status
+      String statusAdditionalData = Utils.getStatus(getAdditionalDataResponse);
+      // Check get additional data status
+      Utils.checkStatusResponse(statusAdditionalData);
+    }
     /**
      * --- spoZebra END ---
      */
-    byte[] response2 = isoDep.transceive(cmd2);
-    //response = Utils.concatenateByteArrays(response, response2);
     /**
      * --- spoZebra BEGIN ---
      * As Smart tap selection could be skipped,
      * let's use the mobile device nonce coming from FCI template
      */
-    GetDataResponse getDataResponse = new GetDataResponse(
-        response,
-        response2,
+    GetDataResponse getDecryptedDataResponse = new GetDataResponse(
+        getDataResponse,
+        getAdditionalDataResponse,
         negotiateCryptoResponse.mobileDeviceEphemeralPublicKey,
         negotiateCryptoCommand.terminalEphemeralPrivateKey,
         negotiateCryptoCommand.terminalNonce,
@@ -504,7 +517,7 @@ public class MainActivity extends AppCompatActivity implements NfcAdapter.Reader
 
     // Decrypted smartTapRedemptionValue from the pass
     descriptiveText.append("\nResponse parsed and decrypted, contents:\n  ");
-    descriptiveText.append(getDataResponse.decryptedSmartTapRedemptionValue);
+    descriptiveText.append(getDecryptedDataResponse.decryptedSmartTapRedemptionValue);
 
     // End
     descriptiveText.append("\n----\n");

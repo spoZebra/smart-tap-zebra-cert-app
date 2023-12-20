@@ -18,6 +18,8 @@ package com.google.smarttapsample;
 import android.nfc.FormatException;
 import android.nfc.NdefMessage;
 import android.nfc.NdefRecord;
+import android.nfc.tech.IsoDep;
+
 import java.io.IOException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
@@ -50,52 +52,41 @@ class GetDataResponse {
   /**
    * Constructor for the class
    *
-   * @param response Byte array response
-   * @param mobileDeviceEphemeralPublicKey Mobile device ephemeral public key
-   * @param terminalEphemeralPrivateKey Terminal ephemeral private key
-   * @param terminalNonce Terminal nonce
-   * @param collectorId Collector ID
+   * @param getDataResponse                      Byte array getDataResponse
+   * @param getAdditionalDataResponse            Byte array getAdditionalDataResponse
+   * @param mobileDeviceEphemeralPublicKey       Mobile device ephemeral public key
+   * @param terminalEphemeralPrivateKey          Terminal ephemeral private key
+   * @param terminalNonce                        Terminal nonce
+   * @param collectorId                          Collector ID
    * @param terminalEphemeralPublicKeyCompressed Terminal ephemeral public key
-   * @param signedData Signed data
-   * @param mobileDeviceNonce Mobile device nonce
+   * @param signedData                           Signed data
+   * @param mobileDeviceNonce                    Mobile device nonce
    */
   GetDataResponse(
-          byte[] response,
-          byte[] response2,
-      byte[] mobileDeviceEphemeralPublicKey,
-      PrivateKey terminalEphemeralPrivateKey,
-      byte[] terminalNonce,
-      byte[] collectorId,
-      byte[] terminalEphemeralPublicKeyCompressed,
-      byte[] signedData,
-      byte[] mobileDeviceNonce)
+          byte[] getDataResponse,
+          byte[] getAdditionalDataResponse,
+          byte[] mobileDeviceEphemeralPublicKey,
+          PrivateKey terminalEphemeralPrivateKey,
+          byte[] terminalNonce,
+          byte[] collectorId,
+          byte[] terminalEphemeralPublicKeyCompressed,
+          byte[] signedData,
+          byte[] mobileDeviceNonce)
       throws Exception {
 
     try {
-      // Extract status
-      String status = Utils.getStatus(response);
-      String status2 = Utils.getStatus(response2);
       /**
        * --- spoZebra BEGIN ---
-       * 92XX - Possible transient failure
-       * The 92XX status messages mean the command failed, but that an immediate retry may succeed.
-       * The terminal must retry at least one time. If the retry fails, end the session. The terminal may continue to request payment.
+       * The response data may be chunked over multiple APDUs.
+       * First, the terminal should retrieve the payload in the reb record.
+       * Next, it should get the payload from any Response: get additional smart tap data, if present, and concatenate them.
        */
-      // if (!status.startsWith("9")) { wrong status check
-      if(status.startsWith("92") || (status2.startsWith("92"))){
-          throw new SmartTapRetryRequested();
-      }
-      else if (!status.startsWith("9")) {
-        // Invalid status code
-        // https://developers.google.com/wallet/smart-tap/reference/apdu-commands/status-words
-        throw new SmartTapException("Invalid status: " + status);
-      }
+      byte[] concatPayloads = Utils.concatenateByteArrays(Utils.extractPayload(getDataResponse), Utils.extractPayload(getAdditionalDataResponse));
+      // Extract the service request NDEF record
+      NdefRecord serviceRequestRecord = getServiceRequestRecord(Utils.extractPayload(concatPayloads));
       /**
        * --- spoZebra END ---
        */
-      byte[] resOk = Utils.concatenateByteArrays(Utils.extractPayload(response), Utils.extractPayload(response2));
-      // Extract the service request NDEF record
-      NdefRecord serviceRequestRecord = getServiceRequestRecord(Utils.extractPayload(resOk));
 
       // Extract the record bundle NDEF record
       NdefRecord recordBundleRecord = getRecordBundleNdefRecord(serviceRequestRecord);
@@ -119,7 +110,7 @@ class GetDataResponse {
      * --- spoZebra BEGIN ---
      * Propagate the proper retry ex
      */
-      //throw new SmartTapException("Problem parsing `get smart tap data` response: " + e);
+      //throw new SmartTapException("Problem parsing `get smart tap data` getDataResponse: " + e);
       throw e;
       /**
        * --- spoZebra END ---

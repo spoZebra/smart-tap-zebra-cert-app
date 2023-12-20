@@ -223,4 +223,24 @@ class Utils {
   /**
    * --- spoZebra END ---
    */
+
+  /**
+   * --- spoZebra BEGIN ---
+   * 92XX - Possible transient failure
+   * The 92XX status messages mean the command failed, but that an immediate retry may succeed.
+   * The terminal must retry at least one time. If the retry fails, end the session. The terminal may continue to request payment.
+   */
+  public static void checkStatusResponse(String status) throws Exception {
+    if(status.startsWith("92")){
+      throw new SmartTapRetryRequested();
+    }
+    else if (!status.startsWith("90") && !status.startsWith("91")) {
+      // Invalid status code
+      // https://developers.google.com/wallet/smart-tap/reference/apdu-commands/status-words
+      throw new SmartTapException("Invalid status: Additional Data:" + status);
+    }
+  }
+  /**
+   * --- spoZebra END ---
+   */
 }
